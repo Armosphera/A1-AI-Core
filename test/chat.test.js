@@ -61,3 +61,35 @@ test("callVision sends an OpenAI-compatible image_url message", async () => {
   assert.strictEqual(userParts[1].type, "image_url");
   assert.ok(userParts[1].image_url.url.startsWith("data:image/png;base64,AAAA"));
 });
+
+test("callStructured requests json_schema response_format and returns parsed data", async () => {
+  let body = {};
+  const schema = { type: "object", properties: { name: { type: "string" } }, required: ["name"], additionalProperties: false };
+  const chat = createChatClient({ safeFetch: async (url, opts) => { body = JSON.parse(opts.body); return ok({ choices: [{ message: { content: '{"name":"Acme"}' } }] }); }, openrouter });
+  const out = await chat.callStructured({ instructions: "design", input: "{}", schema, schemaName: "blueprint", model: "openai/gpt-4o", apiKey: "k" });
+  assert.deepStrictEqual(out.data, { name: "Acme" });
+  assert.strictEqual(body.response_format.type, "json_schema");
+  assert.strictEqual(body.response_format.json_schema.name, "blueprint");
+  assert.strictEqual(body.response_format.json_schema.strict, true);
+  assert.deepStrictEqual(body.response_format.json_schema.schema, schema);
+});
+
+test("callStructured throws AI_BAD_JSON when the model returns non-JSON", async () => {
+  const chat = createChatClient({ safeFetch: async () => ok({ choices: [{ message: { content: "sorry, not json" } }] }), openrouter });
+  await assert.rejects(() => chat.callStructured({ instructions: "i", input: "{}", schema: {}, apiKey: "k" }), err => {
+    assert.strictEqual(err.code, "AI_BAD_JSON");
+    assert.strictEqual(err.statusCode, 502);
+    return true;
+  });
+});
+
+test("callStructured still requires an API key", async () => {
+  const chat = createChatClient({ safeFetch: async () => ok({}), openrouter });
+  await assert.rejects(
+    () => chat.callStructured({ instructions: "i", input: "{}", schema: {} }),
+    (err) => {
+      assert.strictEqual(err.code, "AI_NOT_CONFIGURED");
+      return true;
+    },
+  );
+});

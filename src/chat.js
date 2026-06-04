@@ -99,7 +99,30 @@ function createChatClient({ safeFetch, openrouter, maxOutputTokens = 1200 } = {}
     return result(payload, model);
   }
 
-  return { callModel, callVision, endpoint };
+  // Structured output via OpenRouter's OpenAI-compatible response_format json_schema.
+  // Returns { data: <parsed JSON>, ... }. Only models that support structured output
+  // honor the schema; callers should keep a fallback for AI_BAD_JSON.
+  async function callStructured({ instructions, input, schema, schemaName = "result", strict = true, model = "", apiKey = "", env = process.env, maxTokens = maxOutputTokens } = {}) {
+    const payload = await post({
+      model: model || undefined,
+      max_tokens: maxTokens,
+      messages: [
+        { role: "system", content: instructions },
+        { role: "user", content: input }
+      ],
+      response_format: { type: "json_schema", json_schema: { name: schemaName, strict, schema } }
+    }, apiKey, env);
+    const text = extractText(payload);
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw httpError(502, "AI_BAD_JSON", "Structured AI response was not valid JSON");
+    }
+    return { data, text, responseId: payload.id || null, usage: payload.usage, provider: "openrouter", model: payload.model || model || "" };
+  }
+
+  return { callModel, callVision, callStructured, endpoint };
 }
 
 module.exports = { createChatClient };
