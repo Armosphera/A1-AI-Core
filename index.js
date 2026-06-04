@@ -29,6 +29,7 @@ const { createModelCatalog } = require("./src/model-catalog");
 const { createSettingsStore } = require("./src/settings-store");
 const openNotebookMod = require("./src/open-notebook");
 const supplemental = require("./src/supplemental");
+const { createChatClient } = require("./src/chat");
 
 function createAi(deps = {}) {
   const {
@@ -44,6 +45,7 @@ function createAi(deps = {}) {
   const catalog = createModelCatalog({ safeFetch, isEgressAllowed, openrouter });
   const settings = createSettingsStore({ resolveDataDir, fileName, modelKeys, defaultModels });
   const openNotebook = openNotebookMod.createOpenNotebook({ safeFetch });
+  const chat = createChatClient({ safeFetch, openrouter, maxOutputTokens: deps.maxOutputTokens });
 
   return {
     // model menu + policy
@@ -56,7 +58,8 @@ function createAi(deps = {}) {
     ASPECTS: policy.ASPECTS,
     // local settings
     settings,
-    // opt-in supplemental source
+    // generation + opt-in supplemental source
+    chat,
     openNotebook,
     normalizeSupplementalSources: supplemental.normalizeSupplementalSources,
     MAX_SUPPLEMENTAL_SOURCES: supplemental.MAX_SUPPLEMENTAL_SOURCES
@@ -69,6 +72,7 @@ module.exports = {
   createModelCatalog,
   createSettingsStore,
   createOpenNotebook: openNotebookMod.createOpenNotebook,
+  createChatClient,
   // pure helpers / constants
   normalizeModels: policy.normalizeModels,
   resolveModelForRequest: policy.resolveModelForRequest,
