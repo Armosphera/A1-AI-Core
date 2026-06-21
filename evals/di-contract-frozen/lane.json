@@ -1,0 +1,20 @@
+{
+  "name": "di-contract-frozen",
+  "type": "di-contract",
+  "scope": "frozen-within-minor",
+  "tier": "critical",
+  "category": "consumer-impact",
+  "consumers": [
+    "A1-Suite-Local-MAX",
+    "A1-Suite-Local-ANT",
+    "autoresearch-sboss",
+    "A1-portfolio/docs"
+  ],
+  "description": "Locks createAi() signature + module.exports so accidental drift within a minor version fails CI.",
+  "check": "evals/di-contract-frozen/check.js",
+  "run": "evals/di-contract-frozen/run.sh",
+  "fixtures": null,
+  "program": "evals/di-contract-frozen/program.md",
+  "added": "2026-06-21",
+  "added_in_wave": "Wave 4 (strategic gaps)"
+}
