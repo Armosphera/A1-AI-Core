@@ -31,7 +31,8 @@ jobs:
         run: npm install --no-audit --no-fund --omit=optional
 
       - name: Run unit tests
-        run: node --test test/
+        run: node --test 'test/*.test.js'
+        shell: bash
 
   # ─── Karpathy eval lanes ────────────────────────────────────────────────
   # Each lane is an independent job so failures are isolated and the lane
