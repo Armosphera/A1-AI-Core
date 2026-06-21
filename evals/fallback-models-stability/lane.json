@@ -1,0 +1,20 @@
+{
+  "name": "fallback-models-stability",
+  "type": "data-constant",
+  "scope": "frozen-within-minor",
+  "tier": "critical",
+  "category": "sovereignty",
+  "consumers": [
+    "A1-Suite-Local-MAX",
+    "A1-Suite-Local-ANT",
+    "A1-AI-ERP-SBOS-MSTUDIO-sovereign",
+    "autoresearch-sboss"
+  ],
+  "description": "Locks FALLBACK_MODELS constant in src/model-policy.js — the offline safety net for every A1 product's model menu.",
+  "check": "evals/fallback-models-stability/check.js",
+  "run": "evals/fallback-models-stability/run.sh",
+  "fixtures": null,
+  "program": "evals/fallback-models-stability/program.md",
+  "added": "2026-06-21",
+  "added_in_wave": "Wave 6 (cross-cutting improvements)"
+}
