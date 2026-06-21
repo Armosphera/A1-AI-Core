@@ -37,7 +37,7 @@ jobs:
   # Each lane is an independent job so failures are isolated and the lane
   # name surfaces directly in the GitHub UI.
   di-contract-frozen:
-    name: Karpathy eval: di-contract-frozen
+    name: "Karpathy eval: di-contract-frozen"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
