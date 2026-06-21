@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22.5']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install (acorn devDep for di-contract-frozen lane)
+        run: npm install --no-audit --no-fund --omit=optional
+
+      - name: Run unit tests
+        run: node --test test/
+
+  # ─── Karpathy eval lanes ────────────────────────────────────────────────
+  # Each lane is an independent job so failures are isolated and the lane
+  # name surfaces directly in the GitHub UI.
+  di-contract-frozen:
+    name: Karpathy eval: di-contract-frozen
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22.5
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.5'
+
+      - name: Install acorn (devDep for AST parser)
+        run: npm install --no-audit --no-fund
+
+      - name: Run di-contract-frozen lane
+        run: node evals/di-contract-frozen/check.js
+
+      # This lane fails CI on any drift of the @a1/ai DI contract.
+      # See evals/di-contract-frozen/program.md for rationale + recovery.
