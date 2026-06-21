@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Install (acorn devDep for di-contract-frozen lane)
+      - name: Install (acorn devDep for eval lanes)
         run: npm install --no-audit --no-fund --omit=optional
 
       - name: Run unit tests
@@ -55,5 +55,20 @@ jobs:
       - name: Run di-contract-frozen lane
         run: node evals/di-contract-frozen/check.js
 
-      # This lane fails CI on any drift of the @a1/ai DI contract.
-      # See evals/di-contract-frozen/program.md for rationale + recovery.
+  fallback-models-stability:
+    name: "Karpathy eval: fallback-models-stability"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22.5
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.5'
+
+      - name: Install acorn (devDep for AST parser)
+        run: npm install --no-audit --no-fund
+
+      - name: Run fallback-models-stability lane
+        run: node evals/fallback-models-stability/check.js
