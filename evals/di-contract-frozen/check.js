@@ -49,6 +49,12 @@ const EXPECTED_DEFAULTS = {
 };
 
 // Frozen module.exports entries (in any order).
+//
+// This list captures the actual flat exports of `@a1/ai`. Some product-research
+// helpers (normalizeProductResearchConfig, renderProductResearchProgram,
+// decideExperimentStatus, extractMetricFromText, formatExperimentHeader,
+// formatExperimentResult, parseExperimentTsv, runProductResearchCli) are
+// individually exported. If you add a new export, append to this list.
 const EXPECTED_EXPORTS = [
   "createAi",
   "createModelCatalog",
@@ -57,13 +63,17 @@ const EXPECTED_EXPORTS = [
   "createChatClient",
   "normalizeModels",
   "resolveModelForRequest",
-  "FALLBACK_MODELS",
-  "MODEL_KEYS",
-  "MODULES",
-  "ASPECTS",
+  "normalizeResults",
+  "isEnabled",
   "normalizeSupplementalSources",
-  "MAX_SUPPLEMENTAL_SOURCES",
-  "productResearch",
+  "normalizeProductResearchConfig",
+  "renderProductResearchProgram",
+  "decideExperimentStatus",
+  "extractMetricFromText",
+  "formatExperimentHeader",
+  "formatExperimentResult",
+  "parseExperimentTsv",
+  "runProductResearchCli",
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -201,10 +211,11 @@ if (!createAi) {
 
     for (let i = 0; i < destructure.properties.length; i += 1) {
       const prop = destructure.properties[i];
-      if (prop.type !== "Property" || prop.shorthand === false) continue;
+      // Only fields with `fieldName = defaultExpr` syntax have an AssignmentPattern.
+      // Shorthand fields (`fieldName`) have `prop.value` = Identifier, not AssignmentPattern.
       if (prop.value.type !== "AssignmentPattern") continue;
       const fieldName = prop.key.name;
-      const defaultExpr = source.slice(prop.value.value.start, prop.value.value.end);
+      const defaultExpr = source.slice(prop.value.right.start, prop.value.right.end);
       const expectedDefault = EXPECTED_DEFAULTS[fieldName];
       if (!expectedDefault) continue;
       if (!defaultExpr.includes(expectedDefault)) {
