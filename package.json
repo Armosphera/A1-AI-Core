@@ -2,7 +2,7 @@
   "name": "@a1/ai",
   "version": "0.1.0",
   "private": true,
-  "description": "A1 product family — shared, framework-agnostic AI provider core: OpenRouter live model menu, per-aspect model policy, local AI settings store, and the opt-in Open Notebook connector. Consumed by every A1 product via dependency injection (inject safeFetch + a data-dir resolver).",
+  "description": "A1 product family \u2014 shared, framework-agnostic AI provider core: OpenRouter live model menu, per-aspect model policy, local AI settings store, and the opt-in Open Notebook connector. Consumed by every A1 product via dependency injection (inject safeFetch + a data-dir resolver).",
   "type": "commonjs",
   "main": "index.js",
   "exports": {
@@ -13,10 +13,15 @@
     "src/"
   ],
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "karpathy:run:di-contract": "node evals/di-contract-frozen/check.js",
+    "karpathy:list": "node -e \"const fs=require('fs'),path=require('path');const d='evals';if(fs.existsSync(d)){for(const l of fs.readdirSync(d)){console.log(l);}}else{console.log('(no evals dir)');}\""
   },
   "engines": {
     "node": ">=22.5"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "acorn": "^8.12.0"
+  }
 }
