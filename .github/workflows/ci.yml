@@ -94,3 +94,19 @@ jobs:
 
       - name: Run safefetch-required lane
         run: node evals/safefetch-required/check.js
+
+  safefetch-per-consumer:
+    if: false  # disabled 2026-06-21 — repo is private, local CI in ~/dev/armosphera/
+    name: "Karpathy eval: safefetch-per-consumer"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout A1-AI-Core
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run safefetch-per-consumer lane
+        run: node evals/safefetch-per-consumer/check.js

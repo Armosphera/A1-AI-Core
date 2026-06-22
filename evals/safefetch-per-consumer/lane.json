@@ -1,0 +1,49 @@
+{
+  "name": "safefetch-per-consumer",
+  "version": "1.0.0",
+  "module": "evals/safefetch-per-consumer/check.js",
+  "consumers": [
+    "A1-Suite-Local-ANT",
+    "A1-Suite-Local-MAX",
+    "autoresearch-sboss",
+    "A1-AI-ERP-SBOS-MSTUDIO-sovereign"
+  ],
+  "checks": {
+    "A1-Suite-Local-ANT": [
+      "config.js defines safeFetch",
+      "config.js defines EgressBlockedError",
+      "config.js reads ARMOSPHERA_ONE_EGRESS_ALLOWLIST",
+      "config.js defines isOpenRouterEgressAllowed",
+      "aiProvider.js uses @a1/ai (createModelCatalog or createAi)",
+      "openNotebook.js uses @a1/ai (createOpenNotebook)",
+      "safeFetch calls assertEgressAllowed",
+      "Loopback (127.0.0.1, localhost) always allowed"
+    ],
+    "A1-Suite-Local-MAX": [
+      "anthropic.ts has 1 fetch() call (its job)",
+      "openai.ts has 1 fetch() call (its job)",
+      "ollama.ts has 1 fetch() call (its job)",
+      "anthropic.ts uses #baseUrl (configurable)",
+      "openai.ts uses #baseUrl (configurable)",
+      "ollama.ts uses #baseUrl (configurable)",
+      "factory.ts has 0 raw fetch (just dispatches)",
+      "types.ts has 0 raw fetch (pure types)"
+    ],
+    "autoresearch-sboss": [
+      "model-catalog/workflow.py defines safe_fetch",
+      "safe_fetch uses call_log (canned response)",
+      "safe_fetch accepts env (for test injection)",
+      "no real httpx/requests imports in safe_fetch"
+    ],
+    "A1-AI-ERP-SBOS-MSTUDIO-sovereign": [
+      "AGENTS.md states default ARMOSPHERA_ONE_ALLOW_EGRESS=0",
+      "sboss-gateway does NOT use @a1/ai",
+      "sboss-gateway wires OTel (from w21 worker)",
+      "sboss-llm uses httpx (loopback only)",
+      "AGENTS.md states 'air-gapped' posture"
+    ]
+  },
+  "frozen_as_of": "2026-06-22",
+  "rationale": "Each consumer has a different egress pattern. Lane locks each consumer's specific contract so regressions are caught by CI.",
+  "closes": "A1-AI-Core#5"
+}
