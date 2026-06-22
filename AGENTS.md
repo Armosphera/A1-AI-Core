@@ -1,116 +1,159 @@
-# AGENTS.md — A1-portfolio (cross-repo documentation)
+# AGENTS.md — A1-AI-Core (`@a1/ai`)
 
-This file applies to every agent (human or AI) that touches the `armosphera/A1-portfolio`
-repository. It extends, and never weakens, the global rules in this same repo's
-`LICENSING.md`, `ARCHITECTURE.md`, and `SECURITY.md`.
+This file applies to every agent (human or AI) that touches the `armosphera/A1-AI-Core`
+repository. It extends, and never weakens, the global rules in
+`https://github.com/Armosphera/A1-portfolio/blob/main/LICENSING.md`.
 
-## 1. What this repo is — and isn't
+## ⚠️ CRITICAL — The DI Contract is Frozen
 
-`A1-portfolio` is the **cross-repo documentation source of truth** for the entire A1
-product family. It contains:
+`A1-AI-Core` exports the `@a1/ai` package — a framework-agnostic AI provider core
+consumed by **every A1 application**. Pinned commit (`cec47006` → `f917e8a1`) is
+referenced by:
 
-- `README.md` — repo index grouped by layer (Engine / Application / Reference)
-- `LICENSING.md` — license matrix across all 9 repos
-- `ARCHITECTURE.md` — layer cake, data flow, open portfolio questions
-- `SECURITY.md` — vulnerability reporting, severity SLAs
+- `armosphera/A1-Suite-Local-MAX` — `devDependencies."@a1/ai"`
+- `armosphera/A1-Suite-Local-ANT` — `devDependencies."@a1/ai"`
+- `armosphera/autoresearch-sboss` — runtime use via `scripts/karpathy-eval.mjs`
+- `armosphera/A1-portfolio` — documentation references
 
-**This repo has no code, no tests, no CI.** It's documentation. Edits here are edits
-to the *portfolio* — they ripple by being read by humans and agents in every other repo.
+**Breaking the DI contract breaks 4 downstream repos in lockstep.**
 
-## 2. When to edit this repo
+### What is the frozen contract
 
-Touch this repo whenever:
+```js
+const { createAi } = require("@a1/ai");
 
-1. You add a new A1 repo → update the **Repo index** in `README.md` and the layer cake
-   in `ARCHITECTURE.md`.
-2. You change a license in any repo → update the matrix in `LICENSING.md`. (Per the
-   file's preamble: "If a repo's `LICENSE` file disagrees with this document, the
-   `LICENSE` file wins — but please open an issue so we can resolve the drift.")
-3. You introduce a new cross-repo invariant (e.g. a new pinned SHA, a new eval lane
-   contract, a new sovereignty constraint) → document it in `ARCHITECTURE.md` and link
-   from `SECURITY.md` if it touches security posture.
-4. You change release / tagging convention → update `docs/RELEASE-PROCESS.md` (TODO —
-   does not exist yet).
-5. You change which repo is canonical for a domain → update `docs/PRODUCTS.md` (TODO).
+const ai = createAi({
+  safeFetch: config.safeFetch,                        // (url, options, env) => Promise<Response>, egress-gated
+  isEgressAllowed: config.isOpenRouterEgressAllowed,  // (env) => boolean
+  resolveDataDir: config.resolveArmospheraOneDataDir, // () => string
+  modelKeys: config.modelKeys,                        // { [aspect]: string }
+  defaultModels: config.defaultModels,                // { [aspect]: string }
+  openrouter: { apiKey, baseUrl },                    // optional; degrades to FALLBACK_MODELS if unset
+});
+```
 
-## 3. The 4 files you must keep coherent
+This signature is **public API**. Changes to it require:
 
-These are the load-bearing docs. **All four must agree on the canonical repo list.**
+1. Bumping major version (v1.x → v2.0).
+2. Updating all 4 downstream `package.json` to new SHA in lockstep.
+3. Coordinating 4 PRs across 4 repos in order: AI-Core first, consumers second.
 
-- `README.md` — repo index
-- `LICENSING.md` — license matrix table
-- `ARCHITECTURE.md` — layer cake (must show the same repos)
-- `SECURITY.md` — supported versions table
+Within a minor version (e.g. v0.x → v0.y), you may add fields but **never remove or
+rename** any existing field.
 
-If you add a repo, edit all 4. If you deprecate a repo, edit all 4 + open an issue.
+## 1. What this repo provides
 
-## 4. Conventional Commits
+| Area | Export | Notes |
+|------|--------|-------|
+| Model menu | `createModelCatalog({ safeFetch, isEgressAllowed, openrouter })` | Live OpenRouter `/models`; degrades to `FALLBACK_MODELS` (never throws) when egress is blocked. |
+| Model policy | `resolveModelForRequest(policy, { aspect, module })` | Pure precedence: **module → aspect → default → "" (auto)**. |
+| Local settings | `createSettingsStore({ resolveDataDir, modelKeys, defaultModels })` | `0600` JSON: OpenRouter key + per-aspect model policy + Open Notebook connector. |
+| Open Notebook | `createOpenNotebook({ safeFetch })` | Opt-in, egress-gated, **non-throwing** (`[]` on any failure). |
+| Supplemental | `normalizeSupplementalSources(rows)` | Advisory-only ranking/dedupe/cap. |
+| Product research | `renderProductResearchProgram()` / `decideExperimentStatus()` / TSV helpers | Karpathy-style narrow agent/eval loop primitives. Pure helpers only. |
+
+`@a1/ai` performs **no LLM calls itself** and imports **no product config**. Every
+capability that touches the outside world (HTTP/egress) or the filesystem (the data
+dir) is **injected** by the host product.
+
+## 2. Workflow — Test-Driven Development (TDD)
+
+**Mandatory for every non-trivial change.**
+
+1. Write the test first (RED) in `test/<name>.test.js`. Tests must mock `safeFetch`
+   (no real network). Use the synthetic `FALLBACK_MODELS` for non-throwing tests.
+2. Run `npm test` and confirm it fails for the right reason.
+3. Write the minimum implementation in `src/<name>.js` (GREEN).
+4. Re-export from `index.js`.
+5. Run `npm test` and confirm green.
+6. Run the Karpathy eval lane `di-contract-frozen` to confirm signature stability.
+7. Commit with conventional prefix.
+
+## 3. The 1 file you must NOT edit without coordination
+
+- **`index.js`** — the public exports. Adding a new export is OK; renaming/removing is
+  a breaking change requiring a coordinated 4-repo bump.
+
+## 4. Coverage Floor — 80%
+
+- Unit tests in `test/` (`node --test`).
+- Coverage is measured per touched module.
+- New exports must come with new tests in the same PR.
+
+## 5. Conventional Commits
 
 ```
 <type>(<scope>): <description>
 
-<optional body>
+<optional body> — must call out any DI-contract change as BREAKING
 ```
 
-Allowed types: `docs`, `chore`, `feat` (for new docs sections), `fix` (typos /
-wrong claims), `refactor` (restructuring existing docs).
+- Use `feat!:` or `fix!:` prefix when changing the frozen contract.
+- Body must include the consumer-bump checklist:
+  ```
+  Consumer bump checklist:
+    - [ ] A1-Suite-Local-MAX — bump @a1/ai
+    - [ ] A1-Suite-Local-ANT — bump @a1/ai
+    - [ ] autoresearch-sboss — verify karpathy-eval.mjs still loads
+    - [ ] A1-portfolio — update pinned SHA in ARCHITECTURE.md
+  ```
 
-- Subject line ≤72 chars, imperative mood, no trailing period.
-- Body explains **why**, not **what** (the diff shows the what).
+## 6. Sovereignty Posture
 
-## 5. No Code, No Secrets
+`@a1/ai` runs in a sovereign context — every consumer is air-gapped.
 
-- This repo has no source code, no tests, no CI. **Don't add any.**
-- No secrets, no API keys, no customer data. If you find one in a PR, reject and rotate.
+- `FALLBACK_MODELS` is the offline-mode safety net — never remove or rename it.
+- All network paths go through the injected `safeFetch` (which the consumer gates).
+- All filesystem paths go through the injected `resolveDataDir`.
+- No `require('fs')`, `require('http')`, `require('https')`, `require('net')` at the
+  top level — every I/O must be behind the DI surface.
 
-## 6. Markdown Discipline
+## 7. No Hardcoded Secrets, No Hardcoded Paths
 
-- One H1 per file. Use H2 for sections, H3 for subsections.
-- Code blocks must specify language: ` ```bash `, ` ```js `, ` ```python `, etc.
-- Tables use GitHub-flavored markdown alignment (left for text, right for numbers).
-- Internal links use relative paths (`./LICENSING.md`), external links use full URLs.
-- Line length ≤120 chars (Markdown doesn't hard-wrap but keep readable in raw view).
+- API keys, model names, URLs must come through DI or env.
+- No `path.join(__dirname, ...)` for data files — use `resolveDataDir()`.
 
-## 7. Drift Detection (TODO)
+## 8. Files, Functions, Nesting
 
-This repo should grow a CI check that:
+- One concept per file. Aim for 200–400 lines, 800 hard cap.
+- Functions: <50 lines, single responsibility.
+- No nesting deeper than 4 levels.
 
-- Compares the repo index in `README.md` against the actual list of repos in the
-  `armosphera` org.
-- Compares the license matrix in `LICENSING.md` against each repo's `LICENSE` file.
-- Compares the architecture layer cake in `ARCHITECTURE.md` against the actual repo
-  descriptions.
+## 9. JavaScript Discipline
 
-Add as a Karpathy eval lane: `portfolio-drift-contract`.
+- Zero runtime dependencies. CommonJS.
+- Node ≥ 22.5 (engines in `package.json`).
+- Test runner: `node --test` (the `--test-timeout` flag is Node 20+ — fine here since
+  we target Node 22.5+).
+- No TypeScript, no transpilation. Plain ES2022 + CommonJS.
 
-## 8. Day-One Checklist
+## 10. No Debug Noise
+
+- `console.log` is for development only. Use a no-op or the injected logger.
+- No commented-out code in PRs.
+
+## 11. Karpathy Eval Lane
+
+This repo **is** a Karpathy eval-lane consumer. `scripts/karpathy-eval.mjs` in
+consumer repos loads `@a1/ai` to drive product-research evals. Any change to the
+Karpathy-facing exports (`renderProductResearchProgram`, `decideExperimentStatus`,
+TSV helpers) must be backward-compatible within a minor version.
+
+## 12. Day-One Checklist
 
 ```
-1. cat AGENTS.md             # this file
-2. cat README.md             # current repo index
-3. cat LICENSING.md          # current license matrix
-4. cat ARCHITECTURE.md       # current layer cake
-5. cat SECURITY.md           # current policy
-6. Now edit — keep all 4 in sync.
+1. cat AGENTS.md             # this file — read the DI contract section FIRST
+2. cat README.md             # API surface
+3. cat INTEGRATION.md        # per-product consumption recipe
+4. cat index.js              # the public exports
+5. npm install && npm test   # confirm baseline green
+6. Run: node scripts/karpathy-eval.mjs --list   # verify eval lanes load
+7. Now edit.
 ```
 
-## 9. Roadmap Items (Track Here)
-
-The following are **known portfolio gaps** that this repo will track:
-
-- [ ] `docs/CONTRIBUTING.md` — how to file issues against the right repo
-- [ ] `docs/RELEASE-PROCESS.md` — how releases are cut (tag, notes, publishing)
-- [ ] `docs/PRODUCTS.md` — naming matrix: which repo is canonical for X
-- [ ] AGPL-3.0 dual-license migration for engines (2026 H2)
-- [ ] Portfolio drift CI (drift between docs and actual repos)
-- [ ] Cross-repo evaluation report (which repos have AGENTS.md, program.md,
-      .orchestration/, Karpathy eval lanes — vs which don't)
-
-## 10. Ownership
-
-**Armosphera LLC** · contact: ops@a1-suite.local · security: ops@a1-suite.local
+If `npm test` baseline fails: STOP. Do not edit around a broken baseline.
 
 ---
 
-*Adapted from `armosphera/SBOS-A1-ERP/AGENTS.md`. Specializes for "this repo IS the
-documentation." License: Proprietary (`LicenseRef-Armosphera-Proprietary`). See `LICENSE`.*
+*Adapted from `armosphera/SBOS-A1-ERP/AGENTS.md`. Specializes for the DI-contract-frozen
+invariant. License: Proprietary (`LicenseRef-Armosphera-Proprietary`). See `LICENSE`.*
