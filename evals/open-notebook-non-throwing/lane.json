@@ -1,0 +1,17 @@
+{
+  "name": "open-notebook-non-throwing",
+  "version": "1.0.0",
+  "module": "src/open-notebook.js",
+  "exports_required": ["createOpenNotebook", "isEnabled", "normalizeResults", "DEFAULT_SEARCH_PATH"],
+  "behaviors": [
+    "createOpenNotebook throws on missing safeFetch",
+    "search returns [] (never throws) for null/undefined/empty/whitespace/non-string input",
+    "search does NOT call fetch when disabled (no settings.openNotebook.{enabled,baseUrl})",
+    "normalizeResults preserves title, text, score, sourceUrl, origin='open-notebook'",
+    "normalizeResults is pure (no input mutation)",
+    "isEnabled truthy only when both enabled AND baseUrl are truthy"
+  ],
+  "frozen_as_of": "2026-06-22",
+  "rationale": "Open Notebook is opt-in, egress-gated side source; must never break host retrieval flow",
+  "consumers": ["A1-Suite-Local-ANT", "A1-Suite-Local-MAX", "SBOS-A1-ERP"]
+}
