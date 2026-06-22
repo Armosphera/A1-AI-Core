@@ -1,0 +1,17 @@
+{
+  "name": "safefetch-required",
+  "version": "1.0.0",
+  "module": "src/* (all source files in @a1/ai)",
+  "exports_required": ["chat.js", "model-catalog.js", "open-notebook.js"],
+  "behaviors": [
+    "no raw fetch/http/https/got/axios calls in src/",
+    "no require('http'|'https'|'got'|'axios'|'request') in src/",
+    "open-notebook.js calls safeFetch() AND type-checks it (TypeError on missing)",
+    "model-catalog.js calls safeFetch() AND type-checks it",
+    "chat.js calls safeFetch() AND type-checks it",
+    "index.js has no direct HTTP calls (delegates to modules)"
+  ],
+  "frozen_as_of": "2026-06-22",
+  "rationale": "All network egress in @a1/ai must go through safeFetch (host-injected, egress-gated). No raw HTTP bypasses allowed.",
+  "consumers": ["A1-Suite-Local-ANT", "A1-Suite-Local-MAX", "autoresearch-sboss", "A1-AI-ERP-SBOS-MSTUDIO-sovereign"]
+}
