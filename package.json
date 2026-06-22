@@ -15,7 +15,9 @@
   "scripts": {
     "test": "node --test",
     "karpathy:run:di-contract": "node evals/di-contract-frozen/check.js",
-    "karpathy:list": "node -e \"const fs=require('fs'),path=require('path');const d='evals';if(fs.existsSync(d)){for(const l of fs.readdirSync(d)){console.log(l);}}else{console.log('(no evals dir)');}\""
+    "karpathy:list": "node scripts/karpathy-lane.mjs --list",
+    "karpathy:program": "node scripts/karpathy-lane.mjs --program",
+    "karpathy:run": "node scripts/karpathy-lane.mjs --run"
   },
   "engines": {
     "node": ">=22.5"
